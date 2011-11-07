@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Quad Tree Example</title>
+    <script type="text/javascript" src="lib/QuadTree.js"></script>
+  </head>
+
+  <body style="padding:20px;margin:0;background:#000;color:#fff">
+    <h1>Quad Tree Example</h1>
+    <p>Refresh to regenerate random sprite positions, quad tree is shown below, orange squares indicate quads with more than one sprite and hence possible collisions<p>
+    <canvas id="stage" style="margin:10px;background:#ccc;" width="400" height="400"></canvas>
+
+    <p>There are <span id="total"></span> sprites</p>
+    <p>Without quad tree you need to check <span id="without"></span> possible collisions</p>
+    <p>With quad tree you need to check <span id="with"></span> possible collisions</p>
+
+
+    <script type="text/javascript">
+
+      var context  = document.getElementById("stage").getContext('2d')
+      var quadTree = new QuadTree(0, 0, 400, 400, 0, 4)
+
+      var NUM_SPRITES = 100
+
+      for (var i = 0; i < NUM_SPRITES; i ++) {
+
+        var x = Math.random() * 400,
+            y = Math.random() * 400,
+            r = Math.random() * 5 + 3
+
+        context.strokeWidth  = "1px"
+        context.beginPath()
+        context.arc(x, y, r, 0, Math.PI*2, true)
+        context.closePath()
+        context.fill()
+
+        // Insert sprite representing bounding box of circle
+        quadTree.insert({x: x - r, y: y - r, width: r * 2, height: r * 2})
+
+      }
+
+      var withChildrenOrSprites = quadTree.flatten().filter(function(quad) {
+        return quad.children.length > 0 || quad.sprites.length > 0
+      })
+
+      withChildrenOrSprites.forEach(function(quad) {
+        context.strokeStyle = "#fff"
+        if (quad.sprites.length > 1) {
+          context.fillStyle = "rgba(255, 170, 80, 0.5)"
+          context.fillRect(quad.x, quad.y, quad.width, quad.height)
+        }
+        context.strokeRect(quad.x, quad.y, quad.width, quad.height)
+      })
+
+      function factorial(n) {
+        var res = 1
+        for (var i = 2; i <= n; ++i) {
+          res *= i
+        }
+        return res
+      }
+
+      function choose(n, k) {
+        return factorial(n) / (factorial(k) * factorial(n - k))
+      }
+
+      var possibles = quadTree.possibles().reduce(function(a, b) { return a + choose(b.sprites.length, 2) }, 0)
+
+      quadTree.possibles().forEach(function(p) {console.log(p.sprites.length)})
+
+      document.getElementById("total").innerHTML   = NUM_SPRITES
+      document.getElementById("without").innerHTML = choose(NUM_SPRITES, 2)
+      document.getElementById("with").innerHTML    = possibles
+
+
+    </script>
+
+  </body>
+
+</html>
